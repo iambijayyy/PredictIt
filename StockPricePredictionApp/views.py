@@ -75,3 +75,87 @@ def home(request):
         }
     
     return render(request,'home2.html',context)
+
+def compare(request):
+    stocks1="MSFT"
+    stocks2="AAPL"
+    start_date='2021-06-19'
+    close_date='2022-08-13'
+    context={
+        "flag":False
+    }
+    if request.method == 'POST':
+        stocks1 = request.POST.get('company1')
+        stocks2 = request.POST.get('company2')
+        start_date = str(request.POST.get('start_date'))
+        close_date= str(request.POST.get('close_date'))
+       
+        global df1,df2
+        data1 = yf.Ticker(stocks1)
+        df1=data1.history(start=str(start_date), end=str(close_date), actions=False)
+        df1['Date']=df1.index.strftime('%d-%m-%y')
+ 
+        x_stock1=list(map(str,df1.index.strftime('%d-%m-%y')))
+   
+        y_high_stock1=list(df1['High'])
+        y_open_stock1=list(df1['Open'])
+        y_low_stock1=list(df1['Low'])
+        y_close_stock1=list(df1['Close']) 
+        y_volume_stock1=list(df1['Volume'])
+        data2 = yf.Ticker(stocks2)
+        df2=data2.history(start=str(start_date), end=str(close_date), actions=False)
+        df2['Date']=df2.index.strftime('%d-%m-%y')
+  
+        x_stock2=list(map(str,df2.index.strftime('%d-%m-%y')))
+      
+        y_high_stock2=list(df2['High'])
+        y_open_stock2=list(df2['Open'])
+        y_low_stock2=list(df2['Low'])
+        y_close_stock2=list(df2['Close'])  
+        y_volume_stock2=list(df2['Volume'])
+        x_final=x_stock2[:]
+        if len(x_stock2)<len(x_stock1):
+            y_high_stock2=y_high_stock2[-len(x_stock2):]
+            y_open_stock2=y_open_stock2[-len(x_stock2):]
+            y_low_stock2=y_low_stock2[-len(x_stock2):]
+            y_close_stock2=y_close_stock2[-len(x_stock2):]
+            y_volume_stock2=y_volume_stock2[-len(x_stock2):]
+            x_final=x_stock2[:]
+        elif len(x_stock2)>len(x_stock1) :
+            y_high_stock1=y_high_stock1[-len(x_stock1):]
+            y_open_stock1=y_open_stock1[-len(x_stock1):]
+            y_low_stock1=y_low_stock1[-len(x_stock1):]
+            y_close_stock1=y_close_stock1[-len(x_stock1):]
+            y_volume_stock1=y_volume_stock1[-len(x_stock1):]
+            x_final=x_stock1[:]
+        context={
+            'x':x_final,
+            'y_high_stock1':y_high_stock1,
+            'y_open_stock1':y_open_stock1,
+            'y_low_stock1':y_low_stock1,
+            'y_close_stock1':y_close_stock1,
+            'y_high_stock2':y_high_stock2,
+            'y_open_stock2':y_open_stock2,
+            'y_low_stock2':y_low_stock2,
+            'y_close_stock2':y_close_stock2,
+            'y_volume_stock1':y_volume_stock1,
+            'y_volume_stock2':y_volume_stock2,
+            'company1':stocks1,
+            'company2':stocks2,
+            'df1':df1,
+            'df2':df2,
+            'max_price_stock1':round(max(y_high_stock1),2),
+            'min_price_stock1':round(min(y_low_stock1),2),
+            'last_day_price_stock1':round(y_close_stock1[-1],2),
+            'change_in_price_stock1':round(y_high_stock1[-1]-y_high_stock1[0],2),
+            'change_in_precentage_stock1':round(((y_high_stock1[-1]-y_high_stock1[0])/y_high_stock1[0])*100,2),
+            'max_price_stock2':round(max(y_high_stock2),2),
+            'min_price_stock2':round(min(y_low_stock2),2),
+            'last_day_price_stock2':round(y_close_stock2[-1],2),
+            'change_in_price_stock2':round(y_high_stock2[-1]-y_high_stock2[0],2),
+            'change_in_precentage_stock2':round(((y_high_stock2[-1]-y_high_stock2[0])/y_high_stock2[0])*100,2),
+            'flag':True,
+            "start_date":start_date,
+            "close_date":close_date
+        }
+    return render(request,'compare2.html',context)
