@@ -159,3 +159,37 @@ def compare(request):
             "close_date":close_date
         }
     return render(request,'compare2.html',context)
+
+
+def download(request,id):
+    global df,df1,df2
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="data.csv"' # your filename
+    
+    if id=='0':
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        for ind in df.index:
+            writer.writerow([ind,df['Open'][ind],df['High'][ind],df['Low'][ind],df['Close'][ind],df['Volume'][ind]])
+    elif id=='1':
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        for ind in df1.index:
+            writer.writerow([ind,df1['Open'][ind],df1['High'][ind],df1['Low'][ind],df1['Close'][ind],df1['Volume'][ind]])
+    elif id=='2':
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        for ind in df2.index:
+            writer.writerow([ind,df2['Open'][ind],df2['High'][ind],df2['Low'][ind],df2['Close'][ind],df2['Volume'][ind]])
+    elif id=='3':
+        writer = csv.writer(response)
+        writer.writerow(['', 'Date','Prediction'])
+        for ind in df.index:
+            writer.writerow([ind,df['Date'][ind],df['Prediction'][ind]])
+    elif id=='4':
+        writer = csv.writer(response)
+        writer.writerow(['', 'Symbol','Name','High','Low','Open','Close','Net Change','% Change','Industory','Country'])
+        for ind in df.index:
+            writer.writerow([ind,df['symbol'][ind],df['name'][ind],df['high'][ind],df['low'][ind],df['open'][ind],df['close'][ind],df['net change'][ind],df['% Change'][ind],df['industory'][ind],df['country'][ind]])
+    return response
+
