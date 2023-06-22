@@ -297,3 +297,81 @@ def predict(request):
             }
     
     return render(request,'predict.html',context)
+
+def all_stocks(request):
+    global df
+    today = date.today()
+
+    d1 = today.strftime("%Y-%m-%d")
+    print(d1)
+    print(date.today() - timedelta(days=3))
+    if request.method == 'POST':
+        search=request.POST.get('search')
+        all_data = pd.read_csv("/Users/bijay/FINAL THESIS/StockPricePrediction/all_stocks.csv") 
+        dic={'symbol':[],'name':[],"high":[],'low':[],'open':[],'close':[],'volume':[],'country':[],'net change':[],'% Change':[],'industory':[]}
+        for symbol in [search]:
+            try:
+                apple = yf.Ticker(symbol)
+                df=apple.history(start=str((date.today() - timedelta(days=3)).strftime("%Y-%m-%d")) ,end=str(d1), actions=False)
+               
+                dic['% Change'].append(round((df['Open'][-1]-df['Open'][-2])*100/df['Open'][-2],2))
+                dic['net change'].append(round((df['Open'][-1]-df['Open'][-2]),2))
+                dic['high'].append(round(df['High'][-1],2))
+                dic['symbol'].append(symbol)
+                dic['name'].append(all_data[all_data['Symbol']==symbol]['Name'].values[0])
+                dic['low'].append(round(df['Low'][-1],2))
+                dic['open'].append(round(df['Open'][-1],2))
+                dic['close'].append(round(df['Close'][-1],2))
+                dic['volume'].append(round(df['Volume'][-1],2))
+                dic['country'].append(all_data[all_data['Symbol']==symbol]['Country'].values[0])
+                
+                
+                dic['industory'].append(all_data[all_data['Symbol']==symbol]['Industry'].values[0])
+            except Exception as e:
+                print(e)
+        df=pd.DataFrame.from_dict(dic)
+            
+        context={
+                "df":df,
+                "flag":False
+            }
+        return render(request,'all_stocks.html',context) 
+    all_data = pd.read_csv("/Users/bijay/FINAL THESIS/StockPricePrediction/all_stocks.csv") 
+    one_page=10
+    paginator = Paginator(all_data, one_page) 
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    if page_number==1 or page_number==None:
+        all_data = all_data[0:one_page]
+    else:
+        all_data = all_data[one_page*int(int(page_number)-1):one_page+one_page*int(int(page_number)-1)]
+    dic={'symbol':[],'name':[],"high":[],'low':[],'open':[],'close':[],'volume':[],'country':[],'net change':[],'% Change':[],'industory':[]}
+    for symbol in all_data['Symbol']:
+        try:
+            apple = yf.Ticker(symbol)
+            df=apple.history(start=str((date.today() - timedelta(days=3)).strftime("%Y-%m-%d")) ,end=str(d1), actions=False)
+          
+            dic['% Change'].append(round((df['Open'][-1]-df['Open'][-2])*100/df['Open'][-2],2))
+            dic['net change'].append(round((df['Open'][-1]-df['Open'][-2]),2))
+            dic['high'].append(round(df['High'][-1],2))
+            dic['symbol'].append(symbol)
+            dic['name'].append(all_data[all_data['Symbol']==symbol]['Name'].values[0])
+            dic['low'].append(round(df['Low'][-1],2))
+            dic['open'].append(round(df['Open'][-1],2))
+            dic['close'].append(round(df['Close'][-1],2))
+            dic['volume'].append(round(df['Volume'][-1],2))
+            dic['country'].append(all_data[all_data['Symbol']==symbol]['Country'].values[0])
+            
+            
+            dic['industory'].append(all_data[all_data['Symbol']==symbol]['Industry'].values[0])
+        except Exception as e:
+            print(e)
+    df=pd.DataFrame.from_dict(dic)
+    
+    context={
+        "df":df,
+        'page_obj': page_obj,
+        "flag":True
+    }
+    return render(request,'all_stocks.html',context) 
