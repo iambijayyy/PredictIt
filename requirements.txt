@@ -1,0 +1,13 @@
+python_version==3.11.4
+Django==4.2.3
+pandas
+numpy
+datetime
+seaborn
+yfinance
+matplotlib
+scikit-learn
+tensorflow
+keras
+python-dateutil>=2.8.2
+django-bootstrap4>=3.0.1
