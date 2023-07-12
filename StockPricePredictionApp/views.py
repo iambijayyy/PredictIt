@@ -1,27 +1,34 @@
 import re
-from django.shortcuts import render,HttpResponse
+from django.shortcuts import render, HttpResponse
 import yfinance as yf
 import math
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
-import tensorflow as tf
 import keras
 from keras.preprocessing import image
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPool2D, Flatten,Dense,Dropout,BatchNormalization,LSTM,Bidirectional
+from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout, BatchNormalization, LSTM, Bidirectional
 from keras import regularizers
-from tensorflow.keras.optimizers import Adam,RMSprop,SGD,Adamax
+from keras.optimizers.legacy import Adam as LegacyAdam
+from keras.optimizers import Adam, RMSprop, SGD, Adamax
 import csv
-from keras.callbacks import EarlyStopping,ModelCheckpoint
-from keras import optimizers
+from keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
 import pandas as pd
 from datetime import timedelta, date
 from django.core.paginator import Paginator
+from sklearn.model_selection import train_test_split
 
 
 df=None
 df1=None
 df2=None
+
+def learning_rate_schedule(epoch, lr):
+    if epoch < 5:
+        return lr
+    else:
+        return lr * 0.1
+    
 def home(request):
     global df
     context={"flag":False}
@@ -196,107 +203,119 @@ def download(request,id):
 
 def predict(request):
     global df
-    stocks="AAPL"
-    start_date='2000-04-01'
-    close_date='2022-08-13'
-    context={"flag":False}
+    stocks = "AAPL"
+    start_date = '1980-12-12'
+    close_date = '2023-08-03'
+    context = {"flag": False}
+    
     if request.method == 'POST':
         stocks = request.POST.get('company1')
-        days=int(request.POST.get('days'))
+        days = int(request.POST.get('days'))
         apple = yf.Ticker(stocks)
-        df=apple.history(start=str(start_date), end=str(close_date), actions=False)
-       
-        x=list(map(str,df.index.strftime('%d-%m-%y')))
-        y_high=list(df['Close'])
-        df=df.drop(['Open','High','Volume','Low'],axis=1)
-        min_max_scalar=MinMaxScaler(feature_range=(0,1))
-        data=df.values
-        scaled_data=min_max_scalar.fit_transform(data)
-        train_data=scaled_data[:,:]
-        x_train=[]
-        y_train=[]
-        interval=90
-        for i in range(interval,len(train_data)):
-            x_train.append(train_data[i-interval:i,0])
-            y_train.append(train_data[i,0])
-        x_train,y_train=np.array(x_train),np.array(y_train)
-        x_train=np.reshape(x_train,(x_train.shape[0],x_train.shape[1],1))
+        df = apple.history(start=str(start_date), end=str(close_date), actions=False)
         
-
+        x = list(map(str, df.index.strftime('%d-%m-%y')))
+        y_high = list(df['Close'])
+        df = df.drop(['Open', 'High', 'Volume', 'Low'], axis=1)
+        min_max_scalar = MinMaxScaler(feature_range=(0, 1))
+        data = df.values
+        scaled_data = min_max_scalar.fit_transform(data)
+        train_data = scaled_data[:, :]
+        
+        x_train = []
+        y_train = []
+        interval = 90
+        
+        for i in range(interval, len(train_data)):
+            x_train.append(train_data[i - interval:i, 0])
+            y_train.append(train_data[i, 0])
+        
+        x_train, y_train = np.array(x_train), np.array(y_train)
+        x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+        
+        x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.25, random_state=42)
+        
+        model = Sequential()
+        model.add(LSTM(200, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+        model.add(Dropout(0.2))
+        model.add(LSTM(units=100))
+        model.add(Dropout(0.2))
+        model.add(Dense(100))
+        model.add(Dense(1))
+        
+        adam = LegacyAdam(learning_rate=0.001)
+        
+        model.compile(optimizer=adam, loss='mse')
+        
         stop = EarlyStopping(
-        monitor='val_loss', 
-        mode='min',
-        patience=5
+            monitor='val_loss',
+            mode='min',
+            patience=50
         )
-
-        checkpoint= ModelCheckpoint(
-            filepath='./',
+        
+        checkpoint = ModelCheckpoint(
+            filepath='./best_model.h5',
             save_weights_only=True,
             monitor='val_loss',
             mode='min',
-            save_best_only=True)
-
-        model=Sequential()
-        model.add(LSTM(200,return_sequences=True,input_shape=(x_train.shape[1],1)))
-        model.add(LSTM(units=100))
-        model.add(Dense(100))
-        model.add(Dense(1))
-
-        adam = optimizers.Adam(lr=0.0005)
-
-        model.compile(optimizer=adam, loss='mse')
-        model.fit(x_train, y_train, batch_size=512, epochs=10,shuffle=True, validation_split=0.05, callbacks = [checkpoint,stop])
-        model.load_weights("./")
-        df_test=apple.history(start='2000-01-01', end='2032-05-13', actions=False)
-        df_test=df_test.drop(['Open','High','Volume','Low'],axis=1)
-        predicted=[]
+            save_best_only=True
+        )
+        
+        model.fit(x_train, y_train, batch_size=30, epochs=50, shuffle=True, validation_data=(x_val, y_val), callbacks=[checkpoint, stop])
+        model.load_weights("./best_model.h5")
+        
+        df_test = apple.history(start='1980-12-12', end='2023-08-03', actions=False)
+        df_test = df_test.drop(['Open', 'High', 'Volume', 'Low'], axis=1)
+        predicted = []
+        
         for i in range(days):
-            if predicted!=[]:
-                if (-interval+i)<0:
-                    test_value=df_test[-interval+i:].values
-                    test_value=np.append(test_value,predicted)
+            if predicted != []:
+                if (-interval + i) < 0:
+                    test_value = df_test[-interval + i:].values
+                    test_value = np.append(test_value, predicted)
                 else:
-                    test_value=np.array(predicted)
+                    test_value = np.array(predicted)
             else:
-                test_value=df_test[-interval+i:].values
-            test_value=test_value[-interval:].reshape(-1,1)
-            test_value=min_max_scalar.transform(test_value)
-            test=[]
+                test_value = df_test[-interval + i:].values
+            test_value = test_value[-interval:].reshape(-1, 1)
+            test_value = min_max_scalar.transform(test_value)
+            test = []
             test.append(test_value)
-            test=np.array(test)
-            test=np.reshape(test,(test.shape[0],test.shape[1],1))
-            tomorrow_prediction=model.predict(test)
-            tomorrow_prediction=min_max_scalar.inverse_transform(tomorrow_prediction)
+            test = np.array(test)
+            test = np.reshape(test, (test.shape[0], test.shape[1], 1))
+            tomorrow_prediction = model.predict(test)
+            tomorrow_prediction = min_max_scalar.inverse_transform(tomorrow_prediction)
             predicted.append(tomorrow_prediction[0][0])
-        predicted_x=[]
-        for i in range(1,days+1):
-            predicted_x.append( str((date.today() + timedelta(days=i)).strftime('%d-%m-%y')))
-        if predicted[0]<predicted[-1] and y_high[-1]<predicted[-1]:
-            buy="Yes"
+        
+        predicted_x = [str((date.today() + timedelta(days=i)).strftime('%d-%m-%y')) for i in range(1, days + 1)]
+        
+        if predicted[0] < predicted[-1] and y_high[-1] < predicted[-1]:
+            buy = "Yes"
         else:
-            buy="No"
-
-        dic={}
-        dic['Date']=predicted_x
-        dic['Prediction']=predicted
-        df=pd.DataFrame.from_dict(dic)
-        context={
-                'x':x,
-                'y_high':y_high,
-                'company':stocks,
-                'predicted_x':predicted_x,
-                'predicted_y':predicted,
-                "flag":True,
-                "days":days,
-                "csv":zip(predicted_x,predicted),
-                "max_price":round(max(predicted),2),
-                "min_price":round(min(predicted),2),
-                "buy":buy,
-                "change_in_precentage":round(((max(predicted)-min(predicted))/(min(predicted)))*100,2),
-                "change_in_price":round((max(predicted)-min(predicted)),2)
-            }
+            buy = "No"
+        
+        dic = {
+            'Date': predicted_x,
+            'Prediction': predicted
+        }
+        df = pd.DataFrame.from_dict(dic)
+        context = {
+            'x': x,
+            'y_high': y_high,
+            'company': stocks,
+            'predicted_x': predicted_x,
+            'predicted_y': predicted,
+            "flag": True,
+            "days": days,
+            "csv": zip(predicted_x, predicted),
+            "max_price": round(max(predicted), 2),
+            "min_price": round(min(predicted), 2),
+            "buy": buy,
+            "change_in_precentage": round(((max(predicted) - min(predicted)) / (min(predicted))) * 100, 2),
+            "change_in_price": round((max(predicted) - min(predicted)), 2)
+        }
     
-    return render(request,'predict.html',context)
+    return render(request, 'predict.html', context)
 
 def all_stocks(request):
     global df
@@ -307,7 +326,7 @@ def all_stocks(request):
     print(date.today() - timedelta(days=3))
     if request.method == 'POST':
         search=request.POST.get('search')
-        all_data = pd.read_csv("/Users/bijay/FINAL THESIS/StockPricePrediction/all_stocks.csv") 
+        all_data = pd.read_csv("/Users/bijay/FINAL THESIS/PredictIt/all_stocks.csv") 
         dic={'symbol':[],'name':[],"high":[],'low':[],'open':[],'close':[],'volume':[],'country':[],'net change':[],'% Change':[],'industory':[]}
         for symbol in [search]:
             try:
@@ -336,7 +355,7 @@ def all_stocks(request):
                 "flag":False
             }
         return render(request,'all_stocks.html',context) 
-    all_data = pd.read_csv("/Users/bijay/FINAL THESIS/StockPricePrediction/all_stocks.csv") 
+    all_data = pd.read_csv("/Users/bijay/FINAL THESIS/PredictIt/all_stocks.csv") 
     one_page=10
     paginator = Paginator(all_data, one_page) 
 

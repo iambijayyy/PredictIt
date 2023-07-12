@@ -1,2 +1,8 @@
 venv/
+StockPricePrediction/__pycache__/
+StockPricePredictionApp/__pycache__/
+pyvenv.cfg
+data-00000-of-00001
+db.sqlite3
+*.pyc
 __pycache__/
