@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/iambijayyy/PredictIt"><img src="https://github.com/iambijayyy/PredictIt/blob/master/static/logo.png" alt="PredictIt" width="300"></a>
+  <a href="https://github.com/iambijayyy/PredictIt"><img src="https://github.com/iambijayyy/PredictIt/blob/master/static/logo.png" alt="Predict It" width="300"></a>
 </h1>
 
 <h4 align="center">A stock price prediction web app based on the LSTM model developed using django with Yahoo Finance API integration developed after a comparative analysis of 6 different machine learning stock price prediction models.  </h4>
@@ -9,11 +9,13 @@
   <a href="#about-the-project">About The Project</a> •
   <a href="#dataset">Dataset</a> •
   <a href="#models">Models</a> •
-  <a href="#predictit-features">PredictIt Features</a> •
+  <a href="#predict-it-features">Predict It Features</a> •
   <a href="#how-to-use">How To Use</a>
 </p>
 
-![screenshot](https://github.com/iambijayyy/PredictIt/blob/master/static/ezgif.com-video-to-gif.gif)
+<p align="center">
+  <img src="https://github.com/iambijayyy/PredictIt/blob/master/static/ezgif.com-video-to-gif.gif" alt="screenshot" width="800">
+</p>
 
 ## About The Project
 
@@ -34,8 +36,8 @@
 </h1>
 <h4 align="left"> The disparities in MAE values that exist between the various algorithms highlight how critical it is to select appropriate models based on the prediction tasks at hand. When it comes to capturing the complexities of Dinancial market data, more complex and sophisticated models, such as ARIMA and LSTM, demonstrate superior performance. While simpler models, such as Naive and SMA, might be sufDicient for basic forecasting, more complex and sophisticated models, such as ARIMA and LSTM, do not. In conclusion, the Dindings of the research present convincing evidence for the utilization of advanced machine learning models, such as LSTM, for accurate stock price prediction. </h4>
 
-## PredictIt Features
-<h4 align="left"> PredictIt is developed using Python's web framework Django implementing LSTM model which performed the best in the comparative analysis. It has following features: </h4>
+## Predict It Features
+<h4 align="left"> Predict It is developed using Python's web framework Django implementing LSTM model which performed the best in the comparative analysis. It has following features: </h4>
 
 * Stock Prediction
   - Get instant predictions of stock prices as you input data.
