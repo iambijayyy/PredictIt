@@ -23,7 +23,7 @@
 
 <h4 align="left"> The machine learning models were tested on datasets from two distinct sources: NABIL and AAPL (Apple Inc). The data of NABIL was taken from NepseApha while the data of AAPL was taken through Yahoo Finance API. NumPy was used for data manipulation, and Pandas for data cleaning and preprocessing. Python libraries like NumPy and Pandas were instrumental in feature engineering as well. Exploratory data analysis (EDA) was carried out using Matplotlib and Seaborn, creating informative visualizations and identifying correlations between features and stock price movements. </h4>
 
-## models
+## Models
 
 <h4 align="left"> The project aimed to evaluate and compare six machine learning algorithms for stock price prediction, including Naive, Simple Moving Average, SMA 5, SMA 20, Linear Regression, ARIMA, and LSTM. Python's libraries, Scikit-learn, TensorFlow, and Keras, were used to implement and train these algorithms. The process involved preparing a dataset divided into training and testing sets, and setting hyperparameters like window size, epochs, learning rates, and activation functions to ensure accurate predictions and capture underlying patterns in stock price data. </h4>
 
